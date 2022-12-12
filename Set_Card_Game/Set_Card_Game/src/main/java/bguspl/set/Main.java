@@ -23,7 +23,7 @@ public class Main {
      * @param args - unused.
      */
     public static void main(String[] args) {
-
+        //new comment
         // create the game environment objects
         Logger logger = initLogger(args.length > 0);
         Config config = new Config(logger, "config.properties");
