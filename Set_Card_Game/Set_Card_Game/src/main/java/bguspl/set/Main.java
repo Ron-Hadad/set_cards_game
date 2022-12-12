@@ -25,9 +25,6 @@ public class Main {
      * @param args - unused.
      */
     public static void main(String[] args) {
-        // new comment
-        // comment 2
-        // comment 3
         // create the game environment objects
         Logger logger = initLogger(args.length > 0);
         Config config = new Config(logger, "config.properties");
