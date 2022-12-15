@@ -2,9 +2,11 @@ package bguspl.set.ex;
 
 import java.util.logging.Level;
 
+import bguspl.set.Config;
 import bguspl.set.Env;
 
-import java.util.concurrent.BlockingQueue;
+import java.util.Random;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * This class manages the players' threads and data
@@ -58,7 +60,7 @@ public class Player implements Runnable {
     /**
      * The player prreses queue.
      */
-    private BlockingQueue<Integer> prresesQ;
+    private LinkedBlockingQueue<Integer> prresesQ;
 
     /**
      * The class constructor.
@@ -77,6 +79,7 @@ public class Player implements Runnable {
         this.human = human;
         this.score = 0;
         this.terminate = false;
+        this.prresesQ = new LinkedBlockingQueue<>(3);
     }
 
     /**
@@ -113,6 +116,8 @@ public class Player implements Runnable {
             env.logger.log(Level.INFO, "Thread " + Thread.currentThread().getName() + " starting.");
             while (!terminate) {
                 // TODO implement player key press simulator
+                int choosenSlot = (int) Math.random() * (env.config.tableSize - 1);
+                keyPressed(choosenSlot);
 
                 try {
                     synchronized (this) {
@@ -144,8 +149,16 @@ public class Player implements Runnable {
      */
     public void keyPressed(int slot) {
         // TODO implement
-        if (prresesQ.size() < 3)
-            prresesQ.add(slot);
+        if (table.slotToCard[slot] != null) {
+            if (!prresesQ.contains(slot)) {
+                if (prresesQ.offer(slot))
+                    table.placeToken(id, slot);
+            } else {
+                prresesQ.remove(slot);
+                table.removeToken(id, slot);
+            }
+        }
+
     }
 
     /**
@@ -157,7 +170,8 @@ public class Player implements Runnable {
     public void point() {
         // TODO implement
         // ron-its seems to be implamanted.
-
+        // we may need later to update the score in the tracking score list(so we know
+        // who on)
         int ignored = table.countCards(); // this part is just for demonstration in the unit tests
         env.ui.setScore(id, ++score);
     }
@@ -167,9 +181,9 @@ public class Player implements Runnable {
      */
     public void penalty() {
         // TODO implement
-        env.ui.setFreeze(id, 30000);
+        env.ui.setFreeze(id, env.config.penaltyFreezeMillis);
         try {
-            playerThread.sleep(30000);
+            playerThread.sleep(env.config.penaltyFreezeMillis);
         } catch (InterruptedException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
