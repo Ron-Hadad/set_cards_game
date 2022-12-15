@@ -11,8 +11,6 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.logging.*;
-//Rons opinion first
-//rons second
 
 /**
  * This class contains the game's main function.
