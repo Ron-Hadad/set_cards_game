@@ -4,6 +4,8 @@ import java.util.logging.Level;
 
 import bguspl.set.Env;
 
+import java.util.concurrent.BlockingQueue;
+
 /**
  * This class manages the players' threads and data
  *
@@ -33,7 +35,8 @@ public class Player implements Runnable {
     private Thread playerThread;
 
     /**
-     * The thread of the AI (computer) player (an additional thread used to generate key presses).
+     * The thread of the AI (computer) player (an additional thread used to generate
+     * key presses).
      */
     private Thread aiThread;
 
@@ -53,40 +56,56 @@ public class Player implements Runnable {
     private int score;
 
     /**
+     * The player prreses queue.
+     */
+    private BlockingQueue<Integer> prreses;
+
+    /**
      * The class constructor.
      *
      * @param env    - the environment object.
      * @param dealer - the dealer object.
      * @param table  - the table object.
      * @param id     - the id of the player.
-     * @param human  - true iff the player is a human player (i.e. input is provided manually, via the keyboard).
+     * @param human  - true iff the player is a human player (i.e. input is provided
+     *               manually, via the keyboard).
      */
     public Player(Env env, Dealer dealer, Table table, int id, boolean human) {
         this.env = env;
         this.table = table;
         this.id = id;
         this.human = human;
+        this.score = 0;
+        this.terminate = false;
     }
 
     /**
-     * The main player thread of each player starts here (main loop for the player thread).
+     * The main player thread of each player starts here (main loop for the player
+     * thread).
      */
     @Override
     public void run() {
         playerThread = Thread.currentThread();
         env.logger.log(Level.INFO, "Thread " + Thread.currentThread().getName() + "starting.");
-        if (!human) createArtificialIntelligence();
+        if (!human)
+            createArtificialIntelligence();
 
         while (!terminate) {
             // TODO implement main player loop
         }
-        if (!human) try { aiThread.join(); } catch (InterruptedException ignored) {}
+        if (!human)
+            try {
+                aiThread.join();
+            } catch (InterruptedException ignored) {
+            }
         env.logger.log(Level.INFO, "Thread " + Thread.currentThread().getName() + " terminated.");
     }
 
     /**
-     * Creates an additional thread for an AI (computer) player. The main loop of this thread repeatedly generates
-     * key presses. If the queue of key presses is full, the thread waits until it is not full.
+     * Creates an additional thread for an AI (computer) player. The main loop of
+     * this thread repeatedly generates
+     * key presses. If the queue of key presses is full, the thread waits until it
+     * is not full.
      */
     private void createArtificialIntelligence() {
         // note: this is a very very smart AI (!)
@@ -94,9 +113,13 @@ public class Player implements Runnable {
             env.logger.log(Level.INFO, "Thread " + Thread.currentThread().getName() + " starting.");
             while (!terminate) {
                 // TODO implement player key press simulator
+
                 try {
-                    synchronized (this) { wait(); }
-                } catch (InterruptedException ignored) {}
+                    synchronized (this) {
+                        wait();
+                    }
+                } catch (InterruptedException ignored) {
+                }
             }
             env.logger.log(Level.INFO, "Thread " + Thread.currentThread().getName() + " terminated.");
         }, "computer-" + id);
@@ -117,6 +140,7 @@ public class Player implements Runnable {
      */
     public void keyPressed(int slot) {
         // TODO implement
+
     }
 
     /**

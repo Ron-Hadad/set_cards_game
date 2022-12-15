@@ -51,8 +51,18 @@ public class Dealer implements Runnable {
     @Override
     public void run() {
         env.logger.log(Level.INFO, "Thread " + Thread.currentThread().getName() + " starting.");
+        // creating the players threads:
+        for (int i = 0; i < players.length; i++) {
+            Thread player = new Thread(players[i], "player" + i);
+            player.start();
+        }
         while (!shouldFinish()) {
             placeCardsOnTable();
+
+            // setting the timer:
+            reshuffleTime = System.currentTimeMillis() + env.config.turnTimeoutMillis;
+            // showing the remaining time:
+
             timerLoop();
             updateTimerDisplay(false);
             removeAllCardsFromTable();
@@ -62,10 +72,12 @@ public class Dealer implements Runnable {
     }
 
     /**
-     * The inner loop of the dealer thread that runs as long as the countdown did not time out.
+     * The inner loop of the dealer thread that runs as long as the countdown did
+     * not time out.
      */
     private void timerLoop() {
         while (!terminate && System.currentTimeMillis() < reshuffleTime) {
+            env.ui.setCountdown(reshuffleTime - System.currentTimeMillis(), false);
             sleepUntilWokenOrTimeout();
             updateTimerDisplay(false);
             removeCardsFromTable();
@@ -104,7 +116,8 @@ public class Dealer implements Runnable {
     }
 
     /**
-     * Sleep for a fixed amount of time or until the thread is awakened for some purpose.
+     * Sleep for a fixed amount of time or until the thread is awakened for some
+     * purpose.
      */
     private void sleepUntilWokenOrTimeout() {
         // TODO implement
