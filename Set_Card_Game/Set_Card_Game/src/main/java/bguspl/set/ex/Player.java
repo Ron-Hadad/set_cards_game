@@ -58,7 +58,7 @@ public class Player implements Runnable {
     /**
      * The player prreses queue.
      */
-    private BlockingQueue<Integer> prreses;
+    private BlockingQueue<Integer> prresesQ;
 
     /**
      * The class constructor.
@@ -131,6 +131,10 @@ public class Player implements Runnable {
      */
     public void terminate() {
         // TODO implement
+        // for the case he is sleeping somewhere:
+        playerThread.interrupt();
+        // otherwise:
+        // we should prob. kill him here.
     }
 
     /**
@@ -140,7 +144,8 @@ public class Player implements Runnable {
      */
     public void keyPressed(int slot) {
         // TODO implement
-
+        if (prresesQ.size() < 3)
+            prresesQ.add(slot);
     }
 
     /**
@@ -151,6 +156,7 @@ public class Player implements Runnable {
      */
     public void point() {
         // TODO implement
+        // ron-its seems to be implamanted.
 
         int ignored = table.countCards(); // this part is just for demonstration in the unit tests
         env.ui.setScore(id, ++score);
@@ -161,6 +167,15 @@ public class Player implements Runnable {
      */
     public void penalty() {
         // TODO implement
+        env.ui.setFreeze(id, 30000);
+        try {
+            playerThread.sleep(30000);
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            // ron- I think if the thread intterupted we should determinat him here.
+        }
+
     }
 
     public int getScore() {
