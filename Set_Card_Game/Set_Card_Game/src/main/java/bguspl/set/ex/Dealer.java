@@ -3,6 +3,7 @@ package bguspl.set.ex;
 import bguspl.set.Env;
 
 import java.util.List;
+
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -113,6 +114,11 @@ public class Dealer implements Runnable {
      */
     private void placeCardsOnTable() {
         // TODO implement
+        while (!deck.isEmpty() & table.countCards() != env.config.deckSize) {
+            // random card
+            // random open slot
+            table.placeCard(0, 0);
+        }
     }
 
     /**
@@ -142,5 +148,24 @@ public class Dealer implements Runnable {
      */
     private void announceWinners() {
         // TODO implement
+        int[] winners = new int[env.config.players];
+        int numOfEqualScores = 1;
+        int maxScore = -1;
+        for (int i = 0; i < env.config.players; i++) {
+            if (players[i].getScore() == maxScore) {
+                winners[numOfEqualScores] = i;
+                numOfEqualScores++;
+            }
+            if (players[i].getScore() > maxScore) {
+                maxScore = players[i].getScore();
+                numOfEqualScores = 1;
+                winners[1] = i;
+            }
+        }
+        int[] endListOfWinners = new int[numOfEqualScores];
+        for (int i = 0; i < numOfEqualScores; i++) {
+            endListOfWinners[i] = winners[i];
+        }
+        env.ui.announceWinner(endListOfWinners);
     }
 }
