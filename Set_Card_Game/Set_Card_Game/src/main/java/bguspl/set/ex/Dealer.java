@@ -107,6 +107,7 @@ public class Dealer implements Runnable {
      */
     private void removeCardsFromTable() {
         // TODO implement
+        // the util func cheaks an array of cards*
     }
 
     /**
@@ -114,11 +115,11 @@ public class Dealer implements Runnable {
      */
     private void placeCardsOnTable() {
         // TODO implement
-        while (!deck.isEmpty() & table.countCards() != env.config.deckSize) {
-            // random card
-            // random open slot
-            table.placeCard(0, 0);
-        }
+        // while (!deck.isEmpty() & table.countCards() != env.config.deckSize) {
+        // // random card
+        // // random open slot
+        // table.placeCard(0, 0);
+        // }
     }
 
     /**
