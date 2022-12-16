@@ -63,6 +63,11 @@ public class Player implements Runnable {
     private LinkedBlockingQueue<Integer> prresesQ;
 
     /**
+     * The cards already marked by the player with tocken.
+     */
+    private LinkedBlockingQueue<Integer> tockenQ;
+
+    /**
      * The class constructor.
      *
      * @param env    - the environment object.
@@ -79,7 +84,8 @@ public class Player implements Runnable {
         this.human = human;
         this.score = 0;
         this.terminate = false;
-        this.prresesQ = new LinkedBlockingQueue<>(3);
+        this.prresesQ = new LinkedBlockingQueue<>(10);
+        this.tockenQ = new LinkedBlockingQueue<>(3);
     }
 
     /**
@@ -95,6 +101,16 @@ public class Player implements Runnable {
 
         while (!terminate) {
             // TODO implement main player loop
+            while (!prresesQ.isEmpty()) {
+                Integer prresToTockenOnTable = prresesQ.poll();
+                if (!tockenQ.contains(prresToTockenOnTable)) {
+                    table.placeToken(id, prresToTockenOnTable);
+                    tockenQ.offer(prresToTockenOnTable);
+                } else {
+                    table.removeToken(id, prresToTockenOnTable);
+                    tockenQ.poll();
+                }
+            }
         }
         if (!human)
             try {
@@ -121,7 +137,7 @@ public class Player implements Runnable {
 
                 try {
                     synchronized (this) {
-                        wait();
+                        wait(20000);
                     }
                 } catch (InterruptedException ignored) {
                 }
@@ -150,13 +166,14 @@ public class Player implements Runnable {
     public void keyPressed(int slot) {
         // TODO implement
         if (table.slotToCard[slot] != null) {
-            if (!prresesQ.contains(slot)) {
-                if (prresesQ.offer(slot))
-                    table.placeToken(id, slot);
-            } else {
-                prresesQ.remove(slot);
-                table.removeToken(id, slot);
-            }
+            // if (!tockenQ.contains(slot)) {
+            prresesQ.offer(slot);
+            // table.placeToken(id, slot);
+            // }
+            // else {
+            // prresesQ.remove(slot);
+            // //table.removeToken(id, slot);
+            // }
         }
 
     }
