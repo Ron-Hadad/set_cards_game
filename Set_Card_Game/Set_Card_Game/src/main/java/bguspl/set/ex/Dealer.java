@@ -1,8 +1,10 @@
 package bguspl.set.ex;
 
+import bguspl.set.Config;
 import bguspl.set.Env;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
@@ -79,9 +81,8 @@ public class Dealer implements Runnable {
         while (!terminate && System.currentTimeMillis() < reshuffleTime) {
             env.ui.setCountdown(reshuffleTime - System.currentTimeMillis(), false);
             sleepUntilWokenOrTimeout(); // only if their is only 10 sec left , called to cheak set, time out,
-            updateTimerDisplay(false);// if 10 sec left - reset = false & paint in red. if called to check - reset
-                                      // =false.
-                                      // if time out - reset = true.
+            updateTimerDisplay(false);// if 10 sec left - reset = false & paint in red. if called to check&correct -
+                                      // reset = true,if &false - reset = false. if time out - reset = true.
             removeCardsFromTable(); // if 10 sec left - no cards to remove. if cheak set&correct - replace set, if
                                     // &false -no cards to remove.
                                     // if time out - replace all.
@@ -110,6 +111,7 @@ public class Dealer implements Runnable {
      */
     private void removeCardsFromTable() {
         // TODO implement
+
         // the util func cheaks an array of cards*
     }
 
@@ -118,8 +120,16 @@ public class Dealer implements Runnable {
      */
     private void placeCardsOnTable() {
         // TODO implement
-        // while (!deck.isEmpty() & table.countCards() != env.config.deckSize) {
-        // // random card
+        Collections.shuffle(deck);
+        // while () {
+        // int randDeckIndex = (int)Math.random()*(deck.size() - 1);
+        if (!deck.isEmpty() & table.countCards() != env.config.deckSize) {
+            for (int i = 0; i < env.config.tableSize; i++) {
+                if (table.slotToCard[i] != null) {
+
+                }
+            }
+        }
         // // random open slot
         // table.placeCard(0, 0);
         // }
