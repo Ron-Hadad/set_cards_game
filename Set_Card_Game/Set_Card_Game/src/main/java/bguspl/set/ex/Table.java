@@ -117,6 +117,7 @@ public class Table {
         }
 
         // TODO implement
+        env.ui.removeCard(slot);
     }
 
     /**

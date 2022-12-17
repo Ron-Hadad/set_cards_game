@@ -84,7 +84,7 @@ public class Player implements Runnable {
         this.human = human;
         this.score = 0;
         this.terminate = false;
-        this.prresesQ = new LinkedBlockingQueue<>(10);
+        this.prresesQ = new LinkedBlockingQueue<>(3);
         this.tockenQ = new LinkedBlockingQueue<>(3);
     }
 
@@ -154,6 +154,7 @@ public class Player implements Runnable {
         // TODO implement
         // for the case he is sleeping somewhere:
         playerThread.interrupt();
+
         // otherwise:
         // we should prob. kill him here.
     }
@@ -187,8 +188,6 @@ public class Player implements Runnable {
     public void point() {
         // TODO implement
         // ron-its seems to be implamanted.
-        // we may need later to update the score in the tracking score list(so we know
-        // who on)
         int ignored = table.countCards(); // this part is just for demonstration in the unit tests
         env.ui.setScore(id, ++score);
     }
@@ -203,7 +202,7 @@ public class Player implements Runnable {
             playerThread.sleep(env.config.penaltyFreezeMillis);
         } catch (InterruptedException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            // e.printStackTrace();
             // ron- I think if the thread intterupted we should determinat him here.
         }
 
