@@ -2,8 +2,9 @@ package bguspl.set.ex;
 
 import bguspl.set.Env;
 
+import java.util.ArrayList;
 import java.util.List;
-
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -59,11 +60,6 @@ public class Dealer implements Runnable {
         }
         while (!shouldFinish()) {
             placeCardsOnTable();
-
-            // setting the timer:
-            reshuffleTime = System.currentTimeMillis() + env.config.turnTimeoutMillis;
-            // showing the remaining time:
-
             timerLoop();
             updateTimerDisplay(false);
             removeAllCardsFromTable();
@@ -77,11 +73,18 @@ public class Dealer implements Runnable {
      * not time out.
      */
     private void timerLoop() {
+        // we add:
+        reshuffleTime = System.currentTimeMillis() + env.config.turnTimeoutMillis;
+
         while (!terminate && System.currentTimeMillis() < reshuffleTime) {
             env.ui.setCountdown(reshuffleTime - System.currentTimeMillis(), false);
-            sleepUntilWokenOrTimeout();
-            updateTimerDisplay(false);
-            removeCardsFromTable();
+            sleepUntilWokenOrTimeout(); // only if their is only 10 sec left , called to cheak set, time out,
+            updateTimerDisplay(false);// if 10 sec left - reset = false & paint in red. if called to check - reset
+                                      // =false.
+                                      // if time out - reset = true.
+            removeCardsFromTable(); // if 10 sec left - no cards to remove. if cheak set&correct - replace set, if
+                                    // &false -no cards to remove.
+                                    // if time out - replace all.
             placeCardsOnTable();
         }
     }
@@ -135,6 +138,7 @@ public class Dealer implements Runnable {
      */
     private void updateTimerDisplay(boolean reset) {
         // TODO implement
+
     }
 
     /**
@@ -142,6 +146,22 @@ public class Dealer implements Runnable {
      */
     private void removeAllCardsFromTable() {
         // TODO implement
+        ArrayList<Integer> slotsToRemove = new ArrayList<Integer>();
+        for (int i = 0; i < env.config.tableSize; i++) {
+            slotsToRemove.add(i);
+        }
+        for (int j = 0; j < env.config.tableSize; j++) {
+            // choose a random index:
+            int choosenIndex = (int) Math.random() * (slotsToRemove.size() - 1);
+            int slotchoosen = slotsToRemove.remove(choosenIndex);
+            // if their is a card in the slot choosen then return it to the deck:
+            if (table.slotToCard[slotchoosen] != null) {
+                deck.add(table.slotToCard[slotchoosen]);
+            }
+            // remove the card from the choosen slot:
+            table.removeCard(slotchoosen);
+        }
+
     }
 
     /**
