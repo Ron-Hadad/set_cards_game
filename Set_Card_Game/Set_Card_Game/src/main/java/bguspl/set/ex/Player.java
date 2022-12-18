@@ -5,6 +5,8 @@ import java.util.logging.Level;
 import bguspl.set.Config;
 import bguspl.set.Env;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -60,12 +62,22 @@ public class Player implements Runnable {
     /**
      * The player prreses queue.
      */
-    private LinkedBlockingQueue<Integer> prresesQ;
+    private LinkedBlockingQueue<Integer> slotPrresedQ;
 
     /**
      * The cards already marked by the player with tocken.
      */
-    private LinkedBlockingQueue<Integer> tockenQ;
+    public LinkedBlockingQueue<Integer> cardTockendQ;
+
+    /**
+     * the game dealer.
+     */
+    private Dealer dealer;
+
+    /**
+     * the player key.
+     */
+    public Object playerKey;
 
     /**
      * The class constructor.
@@ -79,13 +91,15 @@ public class Player implements Runnable {
      */
     public Player(Env env, Dealer dealer, Table table, int id, boolean human) {
         this.env = env;
+        this.dealer = dealer;
         this.table = table;
         this.id = id;
         this.human = human;
         this.score = 0;
         this.terminate = false;
-        this.prresesQ = new LinkedBlockingQueue<>(3);
-        this.tockenQ = new LinkedBlockingQueue<>(3);
+        this.slotPrresedQ = new LinkedBlockingQueue<>(3);
+        this.cardTockendQ = new LinkedBlockingQueue<Integer>(3);
+        playerKey = new Object();
     }
 
     /**
@@ -101,14 +115,27 @@ public class Player implements Runnable {
 
         while (!terminate) {
             // TODO implement main player loop
-            while (!prresesQ.isEmpty()) {
-                Integer prresToTockenOnTable = prresesQ.poll();
-                if (!tockenQ.contains(prresToTockenOnTable)) {
-                    table.placeToken(id, prresToTockenOnTable);
-                    tockenQ.offer(prresToTockenOnTable);
+            while (!slotPrresedQ.isEmpty()) {
+                Integer slotPrress = slotPrresedQ.poll();
+                Integer cardToTocken = table.slotToCard[slotPrress];
+                if (!cardTockendQ.contains(cardToTocken)) {
+                    table.placeToken(id, slotPrress);
+                    cardTockendQ.add(cardToTocken);
+                    if (cardTockendQ.size() == 3) {
+                        dealer.setsCheck.offer(id);
+                        synchronized (dealer.dealerKey) {
+                            dealer.dealerKey.notify();
+                        }
+                        // synchronized (playerKey) {
+                        // try {
+                        // playerKey.wait();
+                        // } catch (InterruptedException e) {
+                        // }
+                        // }
+                    }
                 } else {
-                    table.removeToken(id, prresToTockenOnTable);
-                    tockenQ.poll();
+                    table.removeToken(id, slotPrress);
+                    cardTockendQ.remove(cardToTocken);
                 }
             }
         }
@@ -132,8 +159,8 @@ public class Player implements Runnable {
             env.logger.log(Level.INFO, "Thread " + Thread.currentThread().getName() + " starting.");
             while (!terminate) {
                 // TODO implement player key press simulator
-                int choosenSlot = (int) Math.random() * (env.config.tableSize - 1);
-                keyPressed(choosenSlot);
+                int randomSlot = (int) Math.random() * (env.config.tableSize - 1);
+                keyPressed(randomSlot);
 
                 try {
                     synchronized (this) {
@@ -167,14 +194,7 @@ public class Player implements Runnable {
     public void keyPressed(int slot) {
         // TODO implement
         if (table.slotToCard[slot] != null) {
-            // if (!tockenQ.contains(slot)) {
-            prresesQ.offer(slot);
-            // table.placeToken(id, slot);
-            // }
-            // else {
-            // prresesQ.remove(slot);
-            // //table.removeToken(id, slot);
-            // }
+            slotPrresedQ.offer(slot);
         }
 
     }
@@ -190,6 +210,12 @@ public class Player implements Runnable {
         // ron-its seems to be implamanted.
         int ignored = table.countCards(); // this part is just for demonstration in the unit tests
         env.ui.setScore(id, ++score);
+        synchronized (playerKey) {
+            try {
+                playerThread.sleep(env.config.pointFreezeMillis);
+            } catch (InterruptedException e) {
+            }
+        }
     }
 
     /**
@@ -201,8 +227,6 @@ public class Player implements Runnable {
         try {
             playerThread.sleep(env.config.penaltyFreezeMillis);
         } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            // e.printStackTrace();
             // ron- I think if the thread intterupted we should determinat him here.
         }
 
