@@ -42,11 +42,23 @@ public class Dealer implements Runnable {
      */
     private long reshuffleTime = Long.MAX_VALUE;
 
+    /**
+     * object to lock the dealer class.
+     */
+    public static Object dealerKey;
+
+    /**
+     * Q of players that want the dealer to cheack their sets.
+     */
+    public LinkedBlockingQueue<Integer> setsCheck;
+
     public Dealer(Env env, Table table, Player[] players) {
         this.env = env;
         this.table = table;
         this.players = players;
         deck = IntStream.range(0, env.config.deckSize).boxed().collect(Collectors.toList());
+        setsCheck = new LinkedBlockingQueue<Integer>(env.config.players);
+        dealerKey = new Object();
     }
 
     /**
@@ -76,10 +88,10 @@ public class Dealer implements Runnable {
      */
     private void timerLoop() {
         // we add:
-        reshuffleTime = System.currentTimeMillis() + env.config.turnTimeoutMillis;
+        reshuffleTime = System.currentTimeMillis() + env.config.turnTimeoutMillis + 2000;
 
         while (!terminate && System.currentTimeMillis() < reshuffleTime) {
-            env.ui.setCountdown(reshuffleTime - System.currentTimeMillis(), false);
+            // env.ui.setCountdown(reshuffleTime - System.currentTimeMillis(), false);
             sleepUntilWokenOrTimeout(); // only if their is only 10 sec left , called to cheak set, time out,
             updateTimerDisplay(false);// if 10 sec left - reset = false & paint in red. if called to check&correct -
                                       // reset = true,if &false - reset = false. if time out - reset = true.
@@ -108,9 +120,36 @@ public class Dealer implements Runnable {
 
     /**
      * Checks cards should be removed from the table and removes them.
+     * also remove the cards from the player tocken Q if set correct
      */
     private void removeCardsFromTable() {
         // TODO implement
+
+        while (!setsCheck.isEmpty()) {
+            int playerId = setsCheck.poll();
+            // moving the cards marked as tockened to a new simple array:
+            int cardsTockendByPlayer[] = new int[3];
+            for (int i = 0; i < 3; i++) {
+                cardsTockendByPlayer[i] = players[playerId].cardTockendQ.poll();
+            }
+            // if we found a set:
+            if (env.util.testSet(cardsTockendByPlayer)) {
+                players[playerId].point();
+                env.ui.removeTokens();
+                table.removeCard(cardsTockendByPlayer[0]);
+                table.removeCard(cardsTockendByPlayer[1]);
+                table.removeCard(cardsTockendByPlayer[2]);
+            }
+            // if not correct:
+            else {
+                // returning the player tocken Q and poenalty:
+                for (int i = 0; i < 3; i++) {
+                    players[playerId].cardTockendQ.offer(cardsTockendByPlayer[i]);
+                }
+                players[playerId].penalty();
+            }
+
+        }
 
         // the util func cheaks an array of cards*
     }
@@ -120,19 +159,26 @@ public class Dealer implements Runnable {
      */
     private void placeCardsOnTable() {
         // TODO implement
-        Collections.shuffle(deck);
-        // while () {
-        // int randDeckIndex = (int)Math.random()*(deck.size() - 1);
-        if (!deck.isEmpty() & table.countCards() != env.config.deckSize) {
+        // finding the open slots:
+        if (deck.size() != 0 & table.countCards() != env.config.tableSize) {
+            List<Integer> openSlots = new ArrayList<Integer>();
             for (int i = 0; i < env.config.tableSize; i++) {
-                if (table.slotToCard[i] != null) {
-
+                if (table.slotToCard[i] == null) {
+                    openSlots.add(i);
                 }
             }
+            Collections.shuffle(openSlots);
+            Collections.shuffle(deck);
+            // matching cards to open slots:
+            while (!deck.isEmpty() & !openSlots.isEmpty()) {
+                int slotChoosen = openSlots.remove(0);
+                int cardChoosen = deck.remove(0);
+                // update the table
+                table.placeCard(cardChoosen, slotChoosen);
+                // ui update
+                env.ui.placeCard(cardChoosen, slotChoosen);
+            }
         }
-        // // random open slot
-        // table.placeCard(0, 0);
-        // }
     }
 
     /**
@@ -141,6 +187,15 @@ public class Dealer implements Runnable {
      */
     private void sleepUntilWokenOrTimeout() {
         // TODO implement
+        synchronized (dealerKey) {
+            try {
+                dealerKey.wait(1000);
+            } catch (InterruptedException e) {
+
+                // check set
+            }
+        }
+
     }
 
     /**
@@ -149,6 +204,7 @@ public class Dealer implements Runnable {
     private void updateTimerDisplay(boolean reset) {
         // TODO implement
 
+        env.ui.setCountdown(reshuffleTime - System.currentTimeMillis(), false);
     }
 
     /**

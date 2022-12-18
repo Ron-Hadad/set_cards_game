@@ -118,6 +118,11 @@ public class Table {
 
         // TODO implement
         env.ui.removeCard(slot);
+        if (slotToCard[slot] != null) {
+            int cardToRemove = slotToCard[slot];
+            cardToSlot[cardToRemove] = null;
+        }
+        slotToCard[slot] = null;
     }
 
     /**
@@ -128,6 +133,7 @@ public class Table {
      */
     public void placeToken(int player, int slot) {
         // TODO implement
+        env.ui.placeToken(player, slot);
     }
 
     /**
@@ -139,15 +145,7 @@ public class Table {
      */
     public boolean removeToken(int player, int slot) {
         // TODO implement
+        env.ui.removeToken(player, slot);
         return false;
     }
-
-    /**
-     * ron
-     * return an array of indexes of slots that hold cards
-     */
-    // public Array filledSlotsIndexes(){
-    // Array filledSlotsQ ;
-
-    // }
 }
