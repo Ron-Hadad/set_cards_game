@@ -36,7 +36,7 @@ public class Player implements Runnable {
     /**
      * The thread representing the current player.
      */
-    private Thread playerThread;
+    public Thread playerThread;
 
     /**
      * The thread of the AI (computer) player (an additional thread used to generate
@@ -80,6 +80,11 @@ public class Player implements Runnable {
     public Object playerKey;
 
     /**
+     * player end of freeze time due to point or penalty.
+     */
+    public long freezeEndTime;
+
+    /**
      * The class constructor.
      *
      * @param env    - the environment object.
@@ -100,6 +105,7 @@ public class Player implements Runnable {
         this.slotPrresedQ = new LinkedBlockingQueue<>(3);
         this.cardTockendQ = new LinkedBlockingQueue<Integer>(3);
         playerKey = new Object();
+        freezeEndTime = 0;
     }
 
     /**
@@ -119,19 +125,20 @@ public class Player implements Runnable {
                 Integer slotPrress = slotPrresedQ.poll();
                 Integer cardToTocken = table.slotToCard[slotPrress];
                 if (!cardTockendQ.contains(cardToTocken)) {
-                    table.placeToken(id, slotPrress);
-                    cardTockendQ.add(cardToTocken);
-                    if (cardTockendQ.size() == 3) {
-                        dealer.setsCheck.offer(id);
-                        synchronized (dealer.dealerKey) {
-                            dealer.dealerKey.notify();
+                    if (cardTockendQ.offer(cardToTocken)) {
+                        table.placeToken(id, slotPrress);
+                        if (cardTockendQ.size() == 3) {
+                            dealer.setsCheck.offer(id);
+                            synchronized (dealer.dealerKey) {
+                                dealer.dealerKey.notify();
+                            }
+                            synchronized (playerKey) {
+                                try {
+                                    playerKey.wait();
+                                } catch (InterruptedException e) {
+                                }
+                            }
                         }
-                        // synchronized (playerKey) {
-                        // try {
-                        // playerKey.wait();
-                        // } catch (InterruptedException e) {
-                        // }
-                        // }
                     }
                 } else {
                     table.removeToken(id, slotPrress);
@@ -193,7 +200,7 @@ public class Player implements Runnable {
      */
     public void keyPressed(int slot) {
         // TODO implement
-        if (table.slotToCard[slot] != null) {
+        if (table.slotToCard[slot] != null & System.currentTimeMillis() - freezeEndTime > 0) {
             slotPrresedQ.offer(slot);
         }
 
@@ -207,15 +214,10 @@ public class Player implements Runnable {
      */
     public void point() {
         // TODO implement
-        // ron-its seems to be implamanted.
         int ignored = table.countCards(); // this part is just for demonstration in the unit tests
         env.ui.setScore(id, ++score);
-        synchronized (playerKey) {
-            try {
-                playerThread.sleep(env.config.pointFreezeMillis);
-            } catch (InterruptedException e) {
-            }
-        }
+        env.ui.setFreeze(id, env.config.pointFreezeMillis);
+        freezeEndTime = System.currentTimeMillis() + env.config.pointFreezeMillis + 500;
     }
 
     /**
@@ -224,12 +226,7 @@ public class Player implements Runnable {
     public void penalty() {
         // TODO implement
         env.ui.setFreeze(id, env.config.penaltyFreezeMillis);
-        try {
-            playerThread.sleep(env.config.penaltyFreezeMillis);
-        } catch (InterruptedException e) {
-            // ron- I think if the thread intterupted we should determinat him here.
-        }
-
+        freezeEndTime = System.currentTimeMillis() + env.config.penaltyFreezeMillis + 500;
     }
 
     public int getScore() {

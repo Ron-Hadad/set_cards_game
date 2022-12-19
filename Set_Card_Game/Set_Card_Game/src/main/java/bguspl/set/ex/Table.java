@@ -115,7 +115,6 @@ public class Table {
             Thread.sleep(env.config.tableDelayMillis);
         } catch (InterruptedException ignored) {
         }
-
         // TODO implement
         env.ui.removeCard(slot);
         if (slotToCard[slot] != null) {
@@ -123,6 +122,7 @@ public class Table {
             cardToSlot[cardToRemove] = null;
         }
         slotToCard[slot] = null;
+        env.ui.removeTokens(slot);
     }
 
     /**
