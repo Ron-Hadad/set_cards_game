@@ -135,10 +135,20 @@ public class Dealer implements Runnable {
             // if we found a set:
             if (env.util.testSet(cardsTockendByPlayer)) {
                 players[playerId].point();
-                env.ui.removeTokens();
-                table.removeCard(cardsTockendByPlayer[0]);
-                table.removeCard(cardsTockendByPlayer[1]);
-                table.removeCard(cardsTockendByPlayer[2]);
+                reshuffleTime = System.currentTimeMillis() + env.config.turnTimeoutMillis + 1500;
+                // removing the cards and ui tockens:
+                int slot0 = table.cardToSlot[cardsTockendByPlayer[0]];
+                int slot1 = table.cardToSlot[cardsTockendByPlayer[1]];
+                int slot2 = table.cardToSlot[cardsTockendByPlayer[2]];
+                table.removeCard(slot0);
+                table.removeCard(slot1);
+                table.removeCard(slot2);
+                // removing the cards (that were replaced) from the players tockendQ:
+                for (Player player : players) {
+                    player.cardTockendQ.remove(cardsTockendByPlayer[0]);
+                    player.cardTockendQ.remove(cardsTockendByPlayer[1]);
+                    player.cardTockendQ.remove(cardsTockendByPlayer[2]);
+                }
             }
             // if not correct:
             else {
@@ -148,10 +158,7 @@ public class Dealer implements Runnable {
                 }
                 players[playerId].penalty();
             }
-
         }
-
-        // the util func cheaks an array of cards*
     }
 
     /**
@@ -203,8 +210,18 @@ public class Dealer implements Runnable {
      */
     private void updateTimerDisplay(boolean reset) {
         // TODO implement
+        if (!reset) {
+            env.ui.setCountdown(reshuffleTime - System.currentTimeMillis(), false);
+        }
 
-        env.ui.setCountdown(reshuffleTime - System.currentTimeMillis(), false);
+        for (Player player : players) {
+            if (player.freezeEndTime - System.currentTimeMillis() <= 0) {
+                synchronized (player.playerKey) {
+                    player.playerKey.notify();
+                }
+            }
+            env.ui.setFreeze(player.id, player.freezeEndTime - System.currentTimeMillis());
+        }
     }
 
     /**
@@ -216,18 +233,22 @@ public class Dealer implements Runnable {
         for (int i = 0; i < env.config.tableSize; i++) {
             slotsToRemove.add(i);
         }
-        for (int j = 0; j < env.config.tableSize; j++) {
-            // choose a random index:
-            int choosenIndex = (int) Math.random() * (slotsToRemove.size() - 1);
-            int slotchoosen = slotsToRemove.remove(choosenIndex);
-            // if their is a card in the slot choosen then return it to the deck:
-            if (table.slotToCard[slotchoosen] != null) {
-                deck.add(table.slotToCard[slotchoosen]);
+        Collections.shuffle(slotsToRemove);
+        for (int slot : slotsToRemove) {
+            // if their is a card in the slot then return it to the deck:
+            if (table.slotToCard[slot] != null) {
+                deck.add(table.slotToCard[slot]);
             }
             // remove the card from the choosen slot:
-            table.removeCard(slotchoosen);
+            table.removeCard(slot);
         }
-
+        // clear the playes lists and tockens:
+        for (Player player : players) {
+            player.cardTockendQ.clear();
+            synchronized (player.playerKey) {
+                player.playerKey.notify();
+            }
+        }
     }
 
     /**
