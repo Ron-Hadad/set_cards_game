@@ -166,12 +166,12 @@ public class Player implements Runnable {
             env.logger.log(Level.INFO, "Thread " + Thread.currentThread().getName() + " starting.");
             while (!terminate) {
                 // TODO implement player key press simulator
-                int randomSlot = (int) Math.random() * (env.config.tableSize - 1);
+                int randomSlot = (int) (Math.random() * env.config.tableSize);
                 keyPressed(randomSlot);
 
                 try {
                     synchronized (this) {
-                        wait(20000);
+                        wait(800);
                     }
                 } catch (InterruptedException ignored) {
                 }
