@@ -67,7 +67,7 @@ public class Player implements Runnable {
     /**
      * The cards already marked by the player with tocken.
      */
-    public LinkedBlockingQueue<Integer> cardTockendQ;
+    public LinkedBlockingQueue<Integer> cardTokenQ;
 
     /**
      * the game dealer.
@@ -103,7 +103,7 @@ public class Player implements Runnable {
         this.score = 0;
         this.terminate = false;
         this.slotPrresedQ = new LinkedBlockingQueue<>(3);
-        this.cardTockendQ = new LinkedBlockingQueue<Integer>(3);
+        this.cardTokenQ = new LinkedBlockingQueue<Integer>(3);
         playerKey = new Object();
         freezeEndTime = 0;
     }
@@ -122,12 +122,12 @@ public class Player implements Runnable {
         while (!terminate) {
             // TODO implement main player loop
             while (!slotPrresedQ.isEmpty()) {
-                Integer slotPrress = slotPrresedQ.poll();
-                Integer cardToTocken = table.slotToCard[slotPrress];
-                if (!cardTockendQ.contains(cardToTocken)) {
-                    if (cardTockendQ.offer(cardToTocken)) {
-                        table.placeToken(id, slotPrress);
-                        if (cardTockendQ.size() == 3) {
+                Integer slotPress = slotPrresedQ.poll();
+                Integer cardToTocken = table.slotToCard[slotPress];
+                if (!cardTokenQ.contains(cardToTocken)) {
+                    if (cardTokenQ.offer(cardToTocken)) {
+                        table.placeToken(id, slotPress);
+                        if (cardTokenQ.size() == 3) {
                             dealer.setsCheck.offer(id);
                             synchronized (dealer.dealerKey) {
                                 dealer.dealerKey.notify();
@@ -141,8 +141,8 @@ public class Player implements Runnable {
                         }
                     }
                 } else {
-                    table.removeToken(id, slotPrress);
-                    cardTockendQ.remove(cardToTocken);
+                    table.removeToken(id, slotPress);
+                    cardTokenQ.remove(cardToTocken);
                 }
             }
         }

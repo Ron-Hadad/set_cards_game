@@ -140,31 +140,31 @@ public class Dealer implements Runnable {
 
             int playerId = setsCheck.poll();
             // moving the cards marked as tockened to a new simple array:
-            int cardsTockendByPlayer[] = new int[3];
+            int cardsTokenByPlayer[] = new int[3];
             for (int i = 0; i < 3; i++) {
-                cardsTockendByPlayer[i] = players[playerId].cardTockendQ.poll();
+                cardsTokenByPlayer[i] = players[playerId].cardTokenQ.poll();
             }
             // if we found a set:
-            if (env.util.testSet(cardsTockendByPlayer)) {
+            if (env.util.testSet(cardsTokenByPlayer)) {
                 players[playerId].point();
                 // restarting the timers:
                 reshuffleTime = System.currentTimeMillis() + env.config.turnTimeoutMillis + 1500;
                 dealerTickingTime = 1000;
                 warn = false;
                 // removing the cards and ui tockens:
-                int slot0 = table.cardToSlot[cardsTockendByPlayer[0]];
-                int slot1 = table.cardToSlot[cardsTockendByPlayer[1]];
-                int slot2 = table.cardToSlot[cardsTockendByPlayer[2]];
+                int slot0 = table.cardToSlot[cardsTokenByPlayer[0]];
+                int slot1 = table.cardToSlot[cardsTokenByPlayer[1]];
+                int slot2 = table.cardToSlot[cardsTokenByPlayer[2]];
                 table.removeCard(slot0);
                 table.removeCard(slot1);
                 table.removeCard(slot2);
-                // removing the cards (that were replaced) from the players tockendQ:
+                // removing the cards (that were replaced) from the players tokenQ:
                 for (Player player : players) {
                     // for each player we'll try all the three cards that we removed from the table.
                     // additionally, we'll remove the players that want thaeir set to be cheacked
-                    // from the dealer list-only if we chainged their tockend list.
+                    // from the dealer list-only if we chainged their tokendlist.
                     for (int i = 0; i < 3; i++) {
-                        if (player.cardTockendQ.remove(cardsTockendByPlayer[i])) {
+                        if (player.cardTokenQ.remove(cardsTokenByPlayer[i])) {
                             setsCheck.remove(player.id);
                         }
                     }
@@ -174,7 +174,7 @@ public class Dealer implements Runnable {
             else {
                 // returning the player tocken Q and poenalty:
                 for (int i = 0; i < 3; i++) {
-                    players[playerId].cardTockendQ.offer(cardsTockendByPlayer[i]);
+                    players[playerId].cardTokenQ.offer(cardsTokenByPlayer[i]);
                 }
                 players[playerId].penalty();
             }
@@ -266,7 +266,7 @@ public class Dealer implements Runnable {
         }
         // clear the playes lists and tockens:
         for (Player player : players) {
-            player.cardTockendQ.clear();
+            player.cardTokenQ.clear();
             synchronized (player.playerKey) {
                 player.playerKey.notify();
             }

@@ -51,7 +51,8 @@ public class Config {
     public final boolean hints;
 
     /**
-     * The number of milliseconds until the dealer reshuffles the deck (0 show timer since last action, -1 show nothing)
+     * The number of milliseconds until the dealer reshuffles the deck (0 show timer
+     * since last action, -1 show nothing)
      */
     public final long turnTimeoutMillis;
 
@@ -71,13 +72,15 @@ public class Config {
     public final long pointFreezeMillis;
 
     /**
-     * The number of milliseconds to delay before removing/placing a card on the table
+     * The number of milliseconds to delay before removing/placing a card on the
+     * table
      */
     public final long tableDelayMillis;
 
     /**
      * The names of the players to display on the screen
-     * Note: if there are more players than names, the remaining players will be called "Player 3", "Player 4", etc.
+     * Note: if there are more players than names, the remaining players will be
+     * called "Player 3", "Player 4", etc.
      */
     public final String[] playerNames;
 
@@ -124,21 +127,26 @@ public class Config {
     /**
      * The scancodes of the keyboard input data for each player
      * Notes:
-     * 1. This should correspond to the number of human players and the dimensions of the table card grid (i.e. the
-     * first n codes are for the first row, the 2nd n codes are for the 2nd row etc., n being the number of columns).
-     * 2. If the number of entries here does not match the number of human players a warning will be issued
+     * 1. This should correspond to the number of human players and the dimensions
+     * of the table card grid (i.e. the
+     * first n codes are for the first row, the 2nd n codes are for the 2nd row
+     * etc., n being the number of columns).
+     * 2. If the number of entries here does not match the number of human players a
+     * warning will be issued
      */
     private final int[][] playerKeys;
 
     /**
-     * The default scan codes data (this is the same as in the default config.properties file)
+     * The default scan codes data (this is the same as in the default
+     * config.properties file)
      */
     private static final String[] playerKeysDefaults = {
             "81,87,69,82,65,83,68,70,90,88,67,86",
-            "85,73,79,80,74,75,76,59,77,44,46,47"};
+            "85,73,79,80,74,75,76,59,77,44,46,47" };
 
     /**
-     * Attempts to read the config properties from the current working directory. Otherwise, tries to load them
+     * Attempts to read the config properties from the current working directory.
+     * Otherwise, tries to load them
      * as a resource.
      *
      * @param filename - the name of the configuration file.
@@ -156,7 +164,8 @@ public class Config {
                 properties.load(is);
                 logger.log(Level.INFO, "configuration file was loaded from resources directory.");
             } catch (IOException | InvalidPathException ex) {
-                logger.log(Level.WARNING, "cannot read config file from the resources directory either. Using defaults.");
+                logger.log(Level.WARNING,
+                        "cannot read config file from the resources directory either. Using defaults.");
             }
         }
 
@@ -181,7 +190,8 @@ public class Config {
 
         hints = Boolean.parseBoolean(properties.getProperty("Hints", "False"));
         turnTimeoutMillis = (long) (Double.parseDouble(properties.getProperty("TurnTimeoutSeconds", "60")) * 1000.0);
-        turnTimeoutWarningMillis = (long) (Double.parseDouble(properties.getProperty("TurnTimeoutWarningSeconds", "60")) * 1000.0);
+        turnTimeoutWarningMillis = (long) (Double.parseDouble(properties.getProperty("TurnTimeoutWarningSeconds", "60"))
+                * 1000.0);
         pointFreezeMillis = (long) (Double.parseDouble(properties.getProperty("PointFreezeSeconds", "1")) * 1000.0);
         penaltyFreezeMillis = (long) (Double.parseDouble(properties.getProperty("PenaltyFreezeSeconds", "3")) * 1000.0);
         tableDelayMillis = (long) (Double.parseDouble(properties.getProperty("TableDelaySeconds", "0.1")) * 1000.0);
@@ -204,12 +214,14 @@ public class Config {
         playerKeys = new int[players][rows * columns];
         for (int i = 0; i < players; i++) {
             String defaultCodes = "";
-            if (i < 2) defaultCodes = playerKeysDefaults[i];
+            if (i < 2)
+                defaultCodes = playerKeysDefaults[i];
             String playerKeysString = properties.getProperty("PlayerKeys" + (i + 1), defaultCodes);
             if (playerKeysString.length() > 0) {
                 String[] codes = playerKeysString.split(",");
                 if (codes.length != tableSize)
-                    logger.log(Level.WARNING, "player " + (i + 1) + " keys (" + codes.length + ") mismatch table size (" + tableSize + ").");
+                    logger.log(Level.WARNING, "player " + (i + 1) + " keys (" + codes.length + ") mismatch table size ("
+                            + tableSize + ").");
                 for (int j = 0; j < Math.min(codes.length, tableSize); ++j) // parse the key codes string
                     playerKeys[i][j] = Integer.parseInt(codes[j]);
             }
