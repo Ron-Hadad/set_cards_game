@@ -48,9 +48,17 @@ public class Dealer implements Runnable {
     public static Object dealerKey;
 
     /**
-     * Q of players that want the dealer to cheack their sets.
+     * Q of players IDs that want the dealer to cheack their sets.
      */
     public LinkedBlockingQueue<Integer> setsCheck;
+
+    /**
+     * the amount of time the dealer sleep if not waken in sleepUntilWokenOrTimeout
+     * function.
+     * 
+     */
+    private long dealerTickingTime;
+    private boolean warn;
 
     public Dealer(Env env, Table table, Player[] players) {
         this.env = env;
@@ -59,6 +67,8 @@ public class Dealer implements Runnable {
         deck = IntStream.range(0, env.config.deckSize).boxed().collect(Collectors.toList());
         setsCheck = new LinkedBlockingQueue<Integer>(env.config.players);
         dealerKey = new Object();
+        dealerTickingTime = 1000;
+        warn = false;
     }
 
     /**
@@ -89,7 +99,8 @@ public class Dealer implements Runnable {
     private void timerLoop() {
         // we add:
         reshuffleTime = System.currentTimeMillis() + env.config.turnTimeoutMillis + 2000;
-
+        dealerTickingTime = 1000;
+        warn = false;
         while (!terminate && System.currentTimeMillis() < reshuffleTime) {
             // env.ui.setCountdown(reshuffleTime - System.currentTimeMillis(), false);
             sleepUntilWokenOrTimeout(); // only if their is only 10 sec left , called to cheak set, time out,
@@ -126,6 +137,7 @@ public class Dealer implements Runnable {
         // TODO implement
 
         while (!setsCheck.isEmpty()) {
+
             int playerId = setsCheck.poll();
             // moving the cards marked as tockened to a new simple array:
             int cardsTockendByPlayer[] = new int[3];
@@ -135,7 +147,10 @@ public class Dealer implements Runnable {
             // if we found a set:
             if (env.util.testSet(cardsTockendByPlayer)) {
                 players[playerId].point();
+                // restarting the timers:
                 reshuffleTime = System.currentTimeMillis() + env.config.turnTimeoutMillis + 1500;
+                dealerTickingTime = 1000;
+                warn = false;
                 // removing the cards and ui tockens:
                 int slot0 = table.cardToSlot[cardsTockendByPlayer[0]];
                 int slot1 = table.cardToSlot[cardsTockendByPlayer[1]];
@@ -145,9 +160,14 @@ public class Dealer implements Runnable {
                 table.removeCard(slot2);
                 // removing the cards (that were replaced) from the players tockendQ:
                 for (Player player : players) {
-                    player.cardTockendQ.remove(cardsTockendByPlayer[0]);
-                    player.cardTockendQ.remove(cardsTockendByPlayer[1]);
-                    player.cardTockendQ.remove(cardsTockendByPlayer[2]);
+                    // for each player we'll try all the three cards that we removed from the table.
+                    // additionally, we'll remove the players that want thaeir set to be cheacked
+                    // from the dealer list-only if we chainged their tockend list.
+                    for (int i = 0; i < 3; i++) {
+                        if (player.cardTockendQ.remove(cardsTockendByPlayer[i])) {
+                            setsCheck.remove(player.id);
+                        }
+                    }
                 }
             }
             // if not correct:
@@ -196,10 +216,8 @@ public class Dealer implements Runnable {
         // TODO implement
         synchronized (dealerKey) {
             try {
-                dealerKey.wait(1000);
+                dealerKey.wait(dealerTickingTime);
             } catch (InterruptedException e) {
-
-                // check set
             }
         }
 
@@ -210,10 +228,14 @@ public class Dealer implements Runnable {
      */
     private void updateTimerDisplay(boolean reset) {
         // TODO implement
-        if (!reset) {
-            env.ui.setCountdown(reshuffleTime - System.currentTimeMillis(), false);
+        // showing the timer:
+        if (reshuffleTime - System.currentTimeMillis() < 10000) {
+            dealerTickingTime = 10;
+            warn = true;
         }
-
+        env.ui.setCountdown(reshuffleTime - System.currentTimeMillis(), warn);
+        // showing the freeze time left for the players(show nothing if their is non)
+        // and releasing the players.
         for (Player player : players) {
             if (player.freezeEndTime - System.currentTimeMillis() <= 0) {
                 synchronized (player.playerKey) {
